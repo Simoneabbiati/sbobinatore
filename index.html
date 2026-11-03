@@ -2,347 +2,1060 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Sbobinatore</title>
+<meta name="description" content="Carica la registrazione di una lezione e ricevi la sbobinatura, con minutaggio e indice per argomenti.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400..500&family=Inter+Tight:wght@400;500;600&family=Inter:wght@400;500&family=Atkinson+Hyperlegible+Next:wght@400;600&display=swap">
 <style>
 :root {
-  --bg: #F3F5F8;
-  --surface: #FFFFFF;
-  --ink: #18202E;
-  --muted: #5B6578;
-  --line: #D9DEE7;
-  --accent: #2B4BB3;
-  --accent-ink: #FFFFFF;
-  --mark: #F4E36B;
-  --ok: #1E7A4C;
-  --err: #B3261E;
-  --err-bg: #FBEAE8;
+  --bg: #FFFFFF;
+  --ink: #1F1F1F;
+  --text: #4A4A4A;
+  --muted: #6B6B6B;
+  --rule: #D9D9D9;
+  --rule-strong: #8A8A8A;
+  --coral: #E05A47;
+  --coral-ink: #B5392A;
+  --on-coral: #FFFFFF;
+  --coral-wash: #FBEFEC;
+  --now: #FFF6D6;
+
+  --f-display: "Bodoni Moda", "Didot", "Bodoni 72", Georgia, serif;
+  --f-ui: "Inter Tight", "Helvetica Neue", Arial, system-ui, sans-serif;
+  --f-read: "Inter", "Helvetica Neue", Arial, system-ui, sans-serif;
+  --fs-hero: clamp(3rem, 13vw, 11.5rem);
+  --fs-title: clamp(1.75rem, 4.5vw, 3.5rem);
+  --fs-read: 18px;
+  --gutter: clamp(16px, 4vw, 48px);
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #11151D; --surface: #1A2030; --ink: #E7EAF1; --muted: #9AA3B5;
-    --line: #2C3446; --accent: #8FA6F2; --accent-ink: #0F1424; --mark: #6B5F1A;
-    --ok: #6BCB97; --err: #F2928B; --err-bg: #3A1F1E;
+    --bg: #161514; --ink: #ECE8E3; --text: #D6D1CB; --muted: #9A958F;
+    --rule: #2E2C2A; --rule-strong: #6E6A65; --coral: #F07A66; --coral-ink: #F07A66;
+    --on-coral: #161514; --coral-wash: #3A211C; --now: #2C2A1E;
     color-scheme: dark;
   }
 }
-* { box-sizing: border-box; }
-html, body { margin: 0; }
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
 body {
-  background: var(--bg); color: var(--ink);
-  font: 15px/1.5 "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  padding: 32px 16px 64px;
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 400 16px/1.5 var(--f-ui);
+  padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);
 }
-.wrap { max-width: 760px; margin: 0 auto; display: grid; gap: 24px; }
-header h1 {
-  font: 600 34px/1.1 "Newsreader", Georgia, serif; margin: 0 0 6px; letter-spacing: -0.01em;
-}
-header h1 span { background: linear-gradient(transparent 58%, var(--mark) 58%); padding: 0 2px; }
-header p { margin: 0; color: var(--muted); max-width: 60ch; }
+[hidden] { display: none !important; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--coral-ink); outline-offset: 3px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.wrap { max-width: 1440px; margin: 0 auto; padding-inline: var(--gutter); }
 
-.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; display: grid; gap: 16px; }
-.label { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
-.field { display: grid; gap: 6px; }
-.row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
-.row > .field { flex: 1 1 200px; }
-input[type=password], input[type=text], select {
-  font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line);
-  border-radius: 6px; padding: 9px 11px; width: 100%;
-}
-input:focus-visible, select:focus-visible, button:focus-visible, .drop:focus-visible {
-  outline: 2px solid var(--accent); outline-offset: 2px;
-}
-.hint { font-size: 13px; color: var(--muted); }
-.hint a { color: var(--accent); }
-.check { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+/* Header */
+.top { border-bottom: 1px solid var(--rule); background: var(--bg); }
+.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 56px; }
+.brand { font: 500 15px/1 var(--f-ui); color: var(--ink); background: none; border: 0; padding: 8px 0; cursor: pointer; }
+.nav { display: flex; gap: 24px; }
+.link { background: none; border: 0; padding: 8px 0; cursor: pointer; font: 400 15px/1 var(--f-ui); color: var(--ink);
+  text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 4px; transition: text-decoration-color .15s; }
+.link:hover { text-decoration-color: currentColor; }
 
-.drop {
-  border: 2px dashed var(--line); border-radius: 10px; padding: 28px 16px; text-align: center;
-  cursor: pointer; transition: border-color .15s, background .15s;
+/* Labels (reference: label above value) */
+.label { display: block; font: 400 13px/1.3 var(--f-ui); color: var(--muted); }
+.label::after { content: " /"; color: var(--rule-strong); }
+.note { font: 400 12px/1.4 var(--f-ui); color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 20px;
+  border-radius: 0; border: 1px solid var(--ink); background: transparent; color: var(--ink);
+  font: 500 16px/1 var(--f-ui); cursor: pointer; text-decoration: none; }
+.btn.primary { background: var(--coral-ink); border-color: var(--coral-ink); color: var(--on-coral); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn.small { min-height: 40px; padding: 0 14px; font-size: 15px; }
+
+/* Hero */
+.hero { position: relative; padding-block: clamp(24px, 5vw, 64px) 0; }
+.hero h1 { margin: 0; font: 400 var(--fs-hero)/.88 var(--f-display); font-optical-sizing: auto;
+  font-variation-settings: "opsz" 96; text-transform: uppercase; letter-spacing: -0.01em; color: var(--ink); }
+.hero h1 span { display: block; }
+.hero h1 .a { color: var(--coral); }
+.hero h1 .b { padding-left: 1.1em; }
+.spec { display: flex; justify-content: space-between; max-width: 46rem; margin-bottom: 8px; }
+.flourish { position: absolute; left: 0; top: 58%; width: 60%; height: auto; pointer-events: none; overflow: visible; }
+.flourish path { fill: none; stroke: var(--coral); stroke-width: 1.5; vector-effect: non-scaling-stroke;
+  stroke-dasharray: 100; stroke-dashoffset: 0; animation: draw 1.1s ease-out both; }
+@keyframes draw { from { stroke-dashoffset: 100; } }
+body[data-view="work"] .flourish { display: none; }
+@media (prefers-reduced-motion: reduce) { .flourish path { animation: none; } * { scroll-behavior: auto !important; } }
+
+/* Home */
+.home-grid { display: grid; grid-template-columns: repeat(12, 1fr); column-gap: 24px; row-gap: 32px; padding-block: 40px 72px; }
+.home-main { grid-column: 1 / span 7; display: grid; gap: 28px; position: relative; z-index: 1; }
+.home-side { grid-column: 9 / span 4; display: grid; gap: 28px; align-content: start; position: relative; z-index: 1; }
+.lead { font: 400 clamp(1.125rem, 1.6vw, 1.375rem)/1.45 var(--f-ui); color: var(--ink); margin: 0; max-width: 34ch; }
+.side-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+.side-list li { display: grid; grid-template-columns: 2.5em 1fr; color: var(--text); }
+.side-list li span { color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.unlock { border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); padding-block: 20px; display: grid; gap: 12px; background: var(--bg); }
+.unlock h2 { margin: 0; font: 500 18px/1.3 var(--f-ui); color: var(--ink); }
+.unlock p { margin: 0; max-width: 60ch; }
+.inline-form { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
+.inline-form .field { flex: 1 1 240px; }
+
+.field input, .field select, .field textarea {
+  width: 100%; border: 0; border-bottom: 1px solid var(--rule-strong); background: transparent; border-radius: 0;
+  padding: 8px 0; font: 500 16px/1.4 var(--f-ui); color: var(--ink);
 }
-.drop:hover, .drop.over { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, transparent); }
-.drop strong { display: block; font-size: 16px; margin-bottom: 4px; }
-.drop .file { margin-top: 10px; font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 13px; color: var(--ink); word-break: break-all; }
+.field textarea { resize: vertical; min-height: 44px; }
+.field input:focus-visible, .field select:focus-visible, .field textarea:focus-visible { outline: none; border-bottom: 2px solid var(--coral-ink); padding-bottom: 7px; }
+.field select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 10px) 55%, calc(100% - 5px) 55%; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 24px; }
 
-button {
-  font: 600 15px/1 "Instrument Sans", system-ui, sans-serif; border-radius: 6px; padding: 11px 18px;
-  border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); cursor: pointer;
+.drop { position: relative; display: grid; place-items: center; text-align: center; min-height: clamp(220px, 26vw, 340px);
+  border: 1px solid var(--rule-strong); padding: 40px 20px; cursor: pointer; background: var(--bg); transition: background .15s, border-color .15s; }
+.drop:hover, .drop.over { border-color: var(--coral-ink); background: var(--coral-wash); }
+.drop:focus-within { outline: 2px solid var(--coral-ink); outline-offset: 3px; }
+.drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.drop .corner { position: absolute; top: 10px; }
+.drop .corner.l { left: 12px; } .drop .corner.r { right: 12px; }
+.drop-title { font: 400 clamp(1.5rem, 2.6vw, 2.25rem)/1.1 var(--f-display); color: var(--ink); margin: 0 0 8px; }
+.drop-sub { color: var(--muted); margin: 0; }
+.drop .touch { display: none; }
+@media (hover: none) { .drop .mouse { display: none; } .drop .touch { display: inline; } }
+.chosen { display: grid; gap: 4px; }
+.chosen strong { font: 500 18px/1.3 var(--f-ui); color: var(--ink); word-break: break-word; }
+.drop-error { color: var(--coral-ink); font-weight: 500; margin: 0; }
+
+.meta-form { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px 24px; }
+.meta-form .wide { grid-column: span 2; }
+.opts { display: flex; flex-wrap: wrap; gap: 12px 28px; }
+.check { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; min-height: 32px; color: var(--ink); }
+.check input { width: 18px; height: 18px; accent-color: var(--coral-ink); margin: 0; }
+details.more > summary { cursor: pointer; color: var(--ink); list-style: none; display: inline-flex; gap: 8px; min-height: 32px; align-items: center; }
+details.more > summary::-webkit-details-marker { display: none; }
+details.more > summary::before { content: "+"; color: var(--coral-ink); font-weight: 600; width: 1ch; }
+details.more[open] > summary::before { content: "−"; }
+details.more > div { display: grid; gap: 20px; padding-top: 16px; }
+.go-row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+
+.archive h2 { margin: 0 0 8px; }
+.archive ul { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule); }
+.archive li { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--rule); }
+.archive .open { flex: 1; text-align: left; background: none; border: 0; padding: 12px 0; cursor: pointer; display: grid; gap: 2px; min-width: 0; }
+.archive .open strong { font: 500 15px/1.3 var(--f-ui); color: var(--ink); overflow-wrap: anywhere; }
+.archive .open:hover strong { text-decoration: underline; text-underline-offset: 3px; }
+.icon-btn { background: none; border: 0; width: 40px; height: 40px; cursor: pointer; color: var(--muted); display: grid; place-items: center; flex: none; }
+.icon-btn:hover { color: var(--coral-ink); }
+.icon-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+
+/* Work */
+.work { padding-block: 40px 96px; display: grid; gap: 28px; max-width: 60rem; }
+.work-meta { display: flex; flex-wrap: wrap; gap: 20px 48px; }
+.work-meta div { display: grid; gap: 2px; }
+.work-meta strong { font: 500 16px/1.3 var(--f-ui); color: var(--ink); word-break: break-word; }
+.progress-line { width: 100%; height: 80px; overflow: visible; }
+.progress-line .track { fill: none; stroke: var(--rule); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.progress-line .fill { fill: none; stroke: var(--coral); stroke-width: 2; vector-effect: non-scaling-stroke; stroke-dasharray: 100; stroke-dashoffset: 100; transition: stroke-dashoffset .6s ease; }
+.pct { display: flex; align-items: baseline; gap: 20px; flex-wrap: wrap; }
+.pct b { font: 400 clamp(2.5rem, 6vw, 4.5rem)/1 var(--f-display); color: var(--ink); font-variant-numeric: tabular-nums; }
+.pct span { color: var(--ink); font-size: 18px; }
+.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 28px; }
+.steps li { color: var(--muted); display: inline-flex; gap: 8px; align-items: center; }
+.steps li::before { content: ""; width: 9px; height: 9px; border: 1px solid var(--rule-strong); border-radius: 50%; }
+.steps li.now { color: var(--ink); font-weight: 500; }
+.steps li.now::before { border-color: var(--coral-ink); background: var(--coral-ink); }
+.steps li.done { color: var(--text); }
+.steps li.done::before { border-color: var(--text); background: var(--text); }
+.work-msg { margin: 0; max-width: 60ch; }
+.err { border-left: 2px solid var(--coral-ink); padding: 8px 0 8px 14px; color: var(--ink); display: grid; gap: 12px; }
+.err p { margin: 0; }
+.err b { color: var(--coral-ink); }
+
+/* Result */
+.result { padding-bottom: 120px; }
+.toolbar { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--rule); }
+.toolbar .wrap { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding-block: 10px; }
+.search { display: flex; align-items: center; gap: 4px; flex: 1 1 260px; border-bottom: 1px solid var(--rule-strong); min-height: 40px; }
+.search:focus-within { border-bottom: 2px solid var(--coral-ink); }
+.search input { flex: 1; min-width: 0; border: 0; background: transparent; padding: 8px 0; font: 400 16px/1.2 var(--f-ui); color: var(--ink); }
+.search input:focus-visible { outline: none; }
+.search .count { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tools { display: flex; gap: 8px; flex-wrap: wrap; }
+.menu { position: relative; }
+.menu > summary { list-style: none; }
+.menu > summary::-webkit-details-marker { display: none; }
+.menu-list { position: absolute; right: 0; top: calc(100% + 6px); background: var(--bg); border: 1px solid var(--ink); min-width: 220px; display: grid; z-index: 10; }
+.menu-list button { text-align: left; background: none; border: 0; border-bottom: 1px solid var(--rule); padding: 12px 14px; cursor: pointer; display: grid; gap: 2px; }
+.menu-list button:last-child { border-bottom: 0; }
+.menu-list button:hover { background: var(--coral-wash); }
+.menu-list b { font: 500 15px/1.2 var(--f-ui); color: var(--ink); }
+
+.r-head { padding-block: 36px 28px; display: grid; gap: 28px; border-bottom: 1px solid var(--rule); }
+.r-meta { display: flex; flex-wrap: wrap; gap: 16px 48px; }
+.r-meta div { display: grid; gap: 2px; }
+.r-meta strong { font: 500 16px/1.3 var(--f-ui); color: var(--ink); font-variant-numeric: tabular-nums; }
+.r-title { margin: 0; font: 400 var(--fs-title)/1.02 var(--f-display); color: var(--ink); text-wrap: balance; max-width: 22ch; overflow-wrap: anywhere; }
+
+.r-body { display: grid; grid-template-columns: repeat(12, 1fr); column-gap: 24px; padding-top: 32px; }
+.rail { grid-column: 1 / span 3; position: sticky; top: 76px; align-self: start; max-height: calc(100vh - 96px); overflow: auto; display: grid; gap: 24px; padding-bottom: 24px; }
+.rail ol { list-style: none; margin: 8px 0 0; padding: 0; display: grid; }
+.rail li button { width: 100%; text-align: left; background: none; border: 0; padding: 8px 0; cursor: pointer; display: grid; grid-template-columns: 4.2em 1fr; gap: 4px;
+  font: 400 14px/1.35 var(--f-ui); color: var(--text); border-top: 1px solid var(--rule); }
+.rail li button span { color: var(--muted); font-variant-numeric: tabular-nums; }
+.rail li button:hover, .rail li button.on { color: var(--ink); }
+.rail li button.on { font-weight: 500; }
+.reading { grid-column: 4 / span 7; min-width: 0; }
+.summary { border: 1px solid var(--rule); padding: 16px 20px; margin-bottom: 32px; }
+.summary > summary { cursor: pointer; color: var(--ink); font-weight: 500; }
+.summary .note { margin: 8px 0 0; }
+.summary h3 { font: 500 15px/1.3 var(--f-ui); color: var(--ink); margin: 18px 0 6px; }
+.summary ul { margin: 0; padding-left: 1.1em; font: 400 16px/1.55 var(--f-read); }
+
+.transcript { font: 400 var(--fs-read)/1.65 var(--f-read); color: var(--text); max-width: 68ch; }
+.legible .transcript, .legible .summary ul { font-family: "Atkinson Hyperlegible Next", var(--f-read); letter-spacing: .02em; word-spacing: .06em; }
+.transcript h2 { font: 400 clamp(1.5rem, 2.4vw, 2rem)/1.15 var(--f-display); color: var(--ink); margin: 48px 0 16px; text-wrap: balance; scroll-margin-top: 90px; }
+.transcript h2:first-child { margin-top: 0; }
+.para { display: grid; grid-template-columns: 4.6em 1fr; gap: 0 12px; margin-bottom: 1em; border-radius: 2px; scroll-margin-top: 120px; }
+.no-ts .para { grid-template-columns: 1fr; }
+.no-ts .para .ts { display: none; }
+.para p { margin: 0; }
+.para.current p { background: var(--now); box-shadow: -8px 0 0 var(--now), 8px 0 0 var(--now); }
+.ts { background: none; border: 0; padding: 4px 0 0; cursor: pointer; align-self: start; text-align: left;
+  font: 400 13px/1.4 var(--f-ui); color: var(--muted); font-variant-numeric: tabular-nums; }
+.ts:hover { color: var(--coral-ink); text-decoration: underline; text-underline-offset: 3px; }
+.who { font: 600 13px/1 var(--f-ui); letter-spacing: .04em; text-transform: uppercase; color: var(--coral-ink); margin-right: 8px; }
+.unsure { text-decoration: underline dotted var(--coral); text-underline-offset: 4px; text-decoration-thickness: 1.5px; }
+mark { background: var(--coral-wash); color: var(--coral-ink); padding: 0 1px; }
+mark.here { outline: 2px solid var(--coral-ink); }
+.r-foot { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--rule); }
+
+.player { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--bg); border-top: 1px solid var(--ink);
+  padding-bottom: env(safe-area-inset-bottom, 0px); }
+.player .wrap { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding-block: 10px; }
+.player audio { flex: 1 1 280px; min-width: 0; height: 40px; }
+.toast { position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; z-index: 20; max-width: calc(100% - 32px); font-size: 15px; }
+
+/* Settings dialog */
+dialog { border: 1px solid var(--ink); border-radius: 0; padding: 0; width: min(520px, calc(100% - 32px)); background: var(--bg); color: var(--text); }
+dialog::backdrop { background: rgba(20, 20, 20, .35); }
+.dlg { padding: 24px; display: grid; gap: 24px; }
+.dlg h2 { margin: 0; font: 400 32px/1.1 var(--f-display); color: var(--ink); }
+.dlg section { display: grid; gap: 10px; border-top: 1px solid var(--rule); padding-top: 16px; }
+.dlg p { margin: 0; }
+.sizes { display: flex; gap: 8px; }
+.sizes button { min-width: 44px; min-height: 40px; border: 1px solid var(--rule-strong); background: none; cursor: pointer; color: var(--ink); }
+.sizes button[aria-pressed="true"] { border-color: var(--coral-ink); background: var(--coral-wash); color: var(--coral-ink); font-weight: 600; }
+
+@media (max-width: 960px) {
+  .home-main { grid-column: 1 / -1; }
+  .home-side { grid-column: 1 / -1; }
+  .rail { position: static; grid-column: 1 / -1; max-height: none; }
+  .reading { grid-column: 1 / -1; }
+  .r-body { display: block; }
 }
-button.ghost { background: transparent; color: var(--accent); }
-button:disabled { opacity: .45; cursor: not-allowed; }
+@media (max-width: 640px) {
+  .meta-form { grid-template-columns: 1fr 1fr; }
+  .flourish { display: none; }
+  .para { grid-template-columns: 1fr; }
+  .ts { padding: 0; }
+  .nav { gap: 16px; }
+  .tools .btn { flex: 1 1 auto; }
+}
+@media (max-width: 340px) { :root { --fs-hero: 2.75rem; } }
 
-.status { display: grid; gap: 8px; }
-.steps { display: flex; gap: 8px; flex-wrap: wrap; font-size: 13px; }
-.step { padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
-.step.active { border-color: var(--accent); color: var(--accent); font-weight: 600; }
-.step.done { border-color: var(--ok); color: var(--ok); }
-.bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
-.bar > div { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
-.bar.indeterminate > div { width: 30%; animation: slide 1.4s ease-in-out infinite; }
-@keyframes slide { from { margin-left: -30%; } to { margin-left: 100%; } }
-@media (prefers-reduced-motion: reduce) { .bar.indeterminate > div { animation: none; width: 100%; opacity: .5; } }
-.msg { font-size: 14px; color: var(--muted); }
-.error { background: var(--err-bg); color: var(--err); border-radius: 6px; padding: 10px 12px; font-size: 14px; }
-
-.result-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center; }
-.result-head h2 { font: 600 22px/1.2 "Newsreader", Georgia, serif; margin: 0; }
-.meta { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.actions button { padding: 8px 12px; font-size: 14px; }
-.transcript { font: 18px/1.65 "Newsreader", Georgia, serif; max-width: 68ch; }
-.transcript p { margin: 0 0 1em; }
-.ts { font: 12px/1 "JetBrains Mono", ui-monospace, monospace; color: var(--muted); margin-right: 8px; user-select: none; }
-.spk { font: 600 13px/1 "Instrument Sans", sans-serif; color: var(--accent); margin-right: 6px; text-transform: uppercase; letter-spacing: .04em; }
-footer { font-size: 13px; color: var(--muted); }
+@media print {
+  .top, .toolbar, .rail, .player, .r-foot, .summary, .toast, .hero { display: none !important; }
+  body { background: #fff; color: #000; }
+  .r-body { display: block; padding: 0; }
+  .transcript { max-width: none; font-size: 11.5pt; color: #000; }
+  .para.current p { background: none; box-shadow: none; }
+  .r-head { border: 0; padding-top: 0; }
+}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <h1><span>Sbobinatore</span></h1>
-    <p>Carica la registrazione di una lezione e ricevi la sbobinatura in testo, divisa in paragrafi. La trascrizione la fa AssemblyAI.</p>
-  </header>
+<header class="top">
+  <div class="wrap">
+    <button class="brand" id="brand" type="button">Sbobinatore</button>
+    <nav class="nav" aria-label="Menu">
+      <button class="link" id="nav-new" type="button" hidden>Nuova sbobinatura</button>
+      <button class="link" id="nav-settings" type="button">Impostazioni</button>
+    </nav>
+  </div>
+</header>
 
-  <section class="panel" id="setup">
-    <div class="field">
-      <label class="label" for="apikey">Chiave API di AssemblyAI</label>
-      <input type="password" id="apikey" autocomplete="off" placeholder="Incolla qui la chiave">
-      <span class="hint">Resta salvata solo in questo browser. La trovi su <a href="https://www.assemblyai.com/dashboard/api-keys" target="_blank" rel="noopener">assemblyai.com/dashboard</a>.</span>
-    </div>
+<div id="live" class="sr" aria-live="polite"></div>
+<div id="alert" class="sr" role="alert"></div>
 
-    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Scegli il file audio">
-      <strong>Trascina qui il file della lezione</strong>
-      <span class="hint">oppure clicca per sceglierlo. MP3, M4A, WAV, MP4, OGG…</span>
-      <div class="file" id="filename" hidden></div>
-      <input type="file" id="file" accept="audio/*,video/*" hidden>
-    </div>
+<main>
+  <!-- Hero, shared by home and work -->
+  <div class="wrap hero" id="hero">
+    <h1 aria-label="Sbobinatura"><span class="a" aria-hidden="true">Sbobi</span><span class="b" aria-hidden="true">natura</span></h1>
+    <svg class="flourish" viewBox="0 0 1000 260" preserveAspectRatio="none" aria-hidden="true">
+      <path pathLength="100" d="M-20,40 C80,10 150,150 250,170 C360,192 420,90 520,120 C600,145 610,240 700,236 C790,232 820,150 760,128 C700,106 660,190 760,214 C860,238 940,200 1020,180"/>
+    </svg>
+  </div>
 
-    <div class="row">
-      <div class="field">
-        <label class="label" for="lang">Lingua della lezione</label>
-        <select id="lang">
-          <option value="it" selected>Italiano</option>
-          <option value="en">Inglese</option>
-          <option value="fr">Francese</option>
-          <option value="es">Spagnolo</option>
-          <option value="de">Tedesco</option>
-          <option value="auto">Riconosci da sola</option>
-        </select>
+  <!-- HOME -->
+  <section id="home" class="wrap" aria-labelledby="home-h">
+    <h2 id="home-h" class="sr">Nuova sbobinatura</h2>
+    <div class="home-grid">
+      <div class="home-main">
+        <div class="unlock" id="unlock" hidden>
+          <h2>Inserisci la password</h2>
+          <p>Serve solo la prima volta: poi questo browser se la ricorda.</p>
+          <form class="inline-form" id="unlock-form">
+            <div class="field">
+              <label class="label" for="pw">Password</label>
+              <input id="pw" type="password" autocomplete="current-password" spellcheck="false" required>
+            </div>
+            <button class="btn primary" type="submit" id="unlock-btn">Sblocca</button>
+          </form>
+          <p class="drop-error" id="unlock-err" hidden></p>
+        </div>
+
+        <label class="drop" id="drop">
+          <input type="file" id="file" accept="audio/*,video/*,.m4a,.mp3,.wav,.aac,.ogg,.opus,.flac,.wma,.amr,.mp4,.mov,.webm,.mkv">
+          <span class="corner l note">MP3 · M4A · WAV · MP4</span>
+          <span class="corner r note">fino a 2 GB</span>
+          <span id="drop-empty">
+            <p class="drop-title"><span class="mouse">Trascina qui la lezione</span><span class="touch">Scegli la registrazione</span></p>
+            <p class="drop-sub"><span class="mouse">oppure clicca per scegliere il file</span><span class="touch">dal telefono, da File o da Memo vocali</span></p>
+          </span>
+          <span class="chosen" id="drop-chosen" hidden>
+            <span class="label">File scelto</span>
+            <strong id="chosen-name"></strong>
+            <span class="note" id="chosen-info"></span>
+            <span class="note">Clicca per cambiarlo</span>
+          </span>
+        </label>
+        <p class="drop-error" id="file-err" hidden></p>
+
+        <div class="meta-form">
+          <div class="field"><label class="label" for="m-corso">Corso</label><input id="m-corso" autocomplete="off" placeholder="Diritto privato"></div>
+          <div class="field"><label class="label" for="m-titolo">Lezione</label><input id="m-titolo" autocomplete="off" placeholder="La causa del contratto"></div>
+          <div class="field"><label class="label" for="m-data">Data</label><input id="m-data" type="date"></div>
+          <div class="field"><label class="label" for="m-prof">Docente</label><input id="m-prof" autocomplete="off" placeholder="Facoltativo"></div>
+        </div>
+
+        <div class="opts">
+          <label class="check"><input type="checkbox" id="o-index" checked> Indice e riassunto</label>
+          <label class="check"><input type="checkbox" id="o-speakers"> Separa le domande degli studenti</label>
+        </div>
+
+        <details class="more">
+          <summary>Altre opzioni</summary>
+          <div>
+            <div class="field" style="max-width:280px">
+              <label class="label" for="o-lang">Lingua della lezione</label>
+              <select id="o-lang">
+                <option value="it" selected>Italiano</option>
+                <option value="en">Inglese</option>
+                <option value="fr">Francese</option>
+                <option value="es">Spagnolo</option>
+                <option value="de">Tedesco</option>
+                <option value="pt">Portoghese</option>
+                <option value="auto">Riconosci da sola</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="label" for="o-terms">Termini tecnici della materia</label>
+              <textarea id="o-terms" rows="2" placeholder="Separati da virgola. Es: anafilassi, eziopatogenesi, Torrente"></textarea>
+              <span class="note">Aiutano a scrivere correttamente nomi, autori e parole difficili.</span>
+            </div>
+          </div>
+        </details>
+
+        <div class="go-row">
+          <button class="btn primary" id="go" type="button" disabled>Trascrivi</button>
+          <span class="note" id="go-hint">Scegli un file per iniziare.</span>
+        </div>
       </div>
-      <div class="field" style="flex:2 1 260px">
-        <span class="label">Opzioni</span>
-        <label class="check"><input type="checkbox" id="speakers"> Distingui chi parla (professore, domande)</label>
-        <label class="check"><input type="checkbox" id="timestamps" checked> Mostra il minuto di ogni paragrafo</label>
-      </div>
-    </div>
 
-    <div><button id="go" disabled>Sbobina</button></div>
+      <aside class="home-side">
+        <p class="lead">Carica la registrazione di una lezione. Ricevi la sbobinatura in paragrafi, con il minuto di ogni passaggio e un indice per argomenti.</p>
+        <ol class="side-list">
+          <li><span>01</span>Scegli il file audio o video.</li>
+          <li><span>02</span>Aspetta qualche minuto. Puoi cambiare scheda.</li>
+          <li><span>03</span>Leggi, cerca, ascolta un passaggio e scarica in Word o PDF.</li>
+        </ol>
+        <div class="archive" id="archive" hidden>
+          <h2 class="label">Le tue sbobinature</h2>
+          <ul id="archive-list"></ul>
+          <p class="note">Restano salvate solo in questo browser.</p>
+        </div>
+      </aside>
+    </div>
   </section>
 
-  <section class="panel" id="progress" hidden>
-    <div class="steps">
-      <span class="step" data-step="upload">1 · Caricamento</span>
-      <span class="step" data-step="process">2 · Trascrizione</span>
-      <span class="step" data-step="done">3 · Pronta</span>
+  <!-- WORK -->
+  <section id="work" class="wrap" hidden aria-labelledby="work-h">
+    <div class="work">
+      <h2 id="work-h" class="sr">Sbobinatura in corso</h2>
+      <div class="work-meta" id="work-meta"></div>
+      <svg class="progress-line" viewBox="0 0 1000 80" preserveAspectRatio="none" aria-hidden="true">
+        <path class="track" pathLength="100" d="M0,50 C120,10 220,74 360,44 C470,20 520,70 640,58 C760,46 820,8 900,30 C950,44 980,40 1000,36"/>
+        <path class="fill" id="pfill" pathLength="100" d="M0,50 C120,10 220,74 360,44 C470,20 520,70 640,58 C760,46 820,8 900,30 C950,44 980,40 1000,36"/>
+      </svg>
+      <div class="pct"><b id="pct-num">0%</b><span id="pct-label">Caricamento del file</span></div>
+      <div role="progressbar" class="sr" id="pbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Avanzamento"></div>
+      <ol class="steps" id="steps">
+        <li data-s="upload">Caricamento</li>
+        <li data-s="transcribe">Trascrizione</li>
+        <li data-s="index">Indice</li>
+        <li data-s="done">Pronta</li>
+      </ol>
+      <p class="work-msg" id="work-msg"></p>
+      <div class="err" id="work-err" hidden>
+        <p id="work-err-text"></p>
+        <div class="go-row"><button class="btn primary small" id="retry" type="button">Riprova</button><button class="btn small" id="back" type="button">Torna all'inizio</button></div>
+      </div>
+      <div><button class="btn small" id="cancel" type="button">Annulla</button></div>
     </div>
-    <div class="bar" id="bar"><div></div></div>
-    <div class="msg" id="msg"></div>
-    <div class="error" id="err" hidden></div>
   </section>
 
-  <section class="panel" id="result" hidden>
-    <div class="result-head">
-      <div>
-        <h2 id="rtitle">Sbobinatura</h2>
-        <div class="meta" id="rmeta"></div>
-      </div>
-      <div class="actions">
-        <button class="ghost" id="copy">Copia testo</button>
-        <button class="ghost" id="dltxt">Scarica .txt</button>
-        <button class="ghost" id="dldoc">Scarica per Word</button>
+  <!-- RESULT -->
+  <section id="result" hidden aria-labelledby="r-title">
+    <div class="toolbar">
+      <div class="wrap">
+        <div class="search" role="search">
+          <label for="q" class="sr">Cerca nel testo</label>
+          <input id="q" type="search" placeholder="Cerca nel testo" autocomplete="off">
+          <span class="count" id="q-count" aria-live="polite"></span>
+          <button class="icon-btn" id="q-prev" type="button" aria-label="Risultato precedente"><svg viewBox="0 0 16 16"><path d="M3 10l5-5 5 5"/></svg></button>
+          <button class="icon-btn" id="q-next" type="button" aria-label="Risultato successivo"><svg viewBox="0 0 16 16"><path d="M3 6l5 5 5-5"/></svg></button>
+        </div>
+        <div class="tools">
+          <button class="btn small" id="copy" type="button">Copia testo</button>
+          <details class="menu" id="dl-menu">
+            <summary class="btn small primary" role="button">Scarica</summary>
+            <div class="menu-list">
+              <button type="button" data-dl="doc"><b>Word</b><span class="note">Da modificare in Word o Google Docs</span></button>
+              <button type="button" data-dl="pdf"><b>PDF</b><span class="note">Dalla finestra di stampa: Salva come PDF</span></button>
+              <button type="button" data-dl="md"><b>Markdown</b><span class="note">Per Notion o Obsidian</span></button>
+              <button type="button" data-dl="txt"><b>Testo semplice</b><span class="note">.txt</span></button>
+            </div>
+          </details>
+        </div>
       </div>
     </div>
-    <div class="transcript" id="transcript"></div>
-  </section>
 
-  <footer>Per una lezione di un'ora servono di solito pochi minuti. Puoi lasciare la pagina aperta e fare altro.</footer>
-</div>
+    <div class="wrap">
+      <div class="r-head">
+        <div class="r-meta" id="r-meta"></div>
+        <h2 class="r-title" id="r-title" tabindex="-1"></h2>
+      </div>
+      <div class="r-body">
+        <nav class="rail" id="rail" aria-label="Indice" hidden>
+          <div>
+            <span class="label">Indice</span>
+            <ol id="toc"></ol>
+          </div>
+        </nav>
+        <article class="reading" id="reading" lang="it">
+          <details class="summary" id="summary" hidden>
+            <summary>Riassunto automatico</summary>
+            <p class="note">Generato in automatico: usalo per orientarti e controlla sempre sul testo.</p>
+            <div id="summary-body"></div>
+          </details>
+          <div class="transcript" id="transcript"></div>
+          <div class="r-foot note" id="r-foot"></div>
+        </article>
+      </div>
+    </div>
+
+    <div class="player" id="player">
+      <div class="wrap">
+        <audio id="audio" controls preload="metadata" hidden></audio>
+        <label class="check" id="follow-wrap" hidden><input type="checkbox" id="follow" checked> Segui il testo</label>
+        <span id="relink-wrap"><span class="note">Per ascoltare un passaggio, ricollega l'audio della lezione.</span>
+          <label class="btn small" style="position:relative">Scegli l'audio<input type="file" id="relink" accept="audio/*,video/*" style="position:absolute;inset:0;opacity:0;cursor:pointer"></label></span>
+      </div>
+    </div>
+  </section>
+</main>
+
+<dialog id="settings" aria-labelledby="set-h">
+  <form method="dialog" class="dlg">
+    <h2 id="set-h">Impostazioni</h2>
+    <section>
+      <span class="label">Dimensione del testo</span>
+      <div class="sizes" id="sizes">
+        <button type="button" data-size="16">A</button>
+        <button type="button" data-size="18" style="font-size:18px">A</button>
+        <button type="button" data-size="20" style="font-size:20px">A</button>
+        <button type="button" data-size="23" style="font-size:23px">A</button>
+      </div>
+      <label class="check"><input type="checkbox" id="s-legible"> Alta leggibilità (carattere pensato per la dislessia)</label>
+      <label class="check"><input type="checkbox" id="s-ts"> Mostra il minuto accanto a ogni paragrafo</label>
+    </section>
+    <section>
+      <span class="label">Accesso</span>
+      <p id="s-key-status"></p>
+      <div class="go-row"><button type="button" class="btn small" id="s-lock">Blocca su questo browser</button></div>
+    </section>
+    <section>
+      <span class="label">Privacy</span>
+      <p>L'audio va direttamente ad AssemblyAI, il servizio che fa la trascrizione. Le sbobinature restano salvate solo in questo browser.</p>
+    </section>
+    <div><button class="btn primary" value="close">Chiudi</button></div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" hidden></div>
 
 <script>
+"use strict";
+/* Chiave AssemblyAI cifrata con la password (AES-GCM, PBKDF2-SHA256). Rigenerala con tools/encrypt-key.mjs */
+const ENC = {"v":1,"iter":600000,"salt":"jN1nVhWir62uiP+4FZZs/A==","iv":"daWk1rurUFAZx9jF","ct":"Zus3E3jjOPcBlcE2/OpTO42gGJLI91Wo38JWzP2/1xTZIlewnidtgMGf0/1k/993"};
 const API = "https://api.assemblyai.com/v2";
-const $ = id => document.getElementById(id);
-let file = null, lastExport = null;
+const GATEWAY = "https://llm-gateway.assemblyai.com/v1/chat/completions";
+const GATEWAY_MODEL = "qwen3.5-4b-32k-fast";
+const UNSURE = 0.5;
+const LANG_NAMES = { it: "italiano", fr: "francese", es: "spagnolo", de: "tedesco", pt: "portoghese" };
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
 const store = {
-  get(k) { try { return localStorage.getItem(k) || ""; } catch { return ""; } },
-  set(k, v) { try { localStorage.setItem(k, v); } catch {} }
+  get(k, d = null) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  del(k) { try { localStorage.removeItem(k); } catch {} }
 };
-const DEFAULT_KEY = "";
-$("apikey").value = store.get("aai_key") || DEFAULT_KEY;
-$("apikey").addEventListener("input", e => { store.set("aai_key", e.target.value.trim()); refresh(); });
+const idb = (() => {
+  let p;
+  const open = () => p || (p = new Promise((res, rej) => {
+    const r = indexedDB.open("sbobinatore", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("t", { keyPath: "id" });
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  }));
+  const run = async (mode, fn) => {
+    const db = await open();
+    return new Promise((res, rej) => {
+      const tx = db.transaction("t", mode); const req = fn(tx.objectStore("t"));
+      tx.oncomplete = () => res(req && req.result); tx.onerror = () => rej(tx.error);
+    });
+  };
+  return { put: v => run("readwrite", s => s.put(v)), get: id => run("readonly", s => s.get(id)),
+           all: () => run("readonly", s => s.getAll()), del: id => run("readwrite", s => s.delete(id)) };
+})();
 
-function refresh() { $("go").disabled = !(file && $("apikey").value.trim()); }
+let apiKey = store.get("sb_key", "");
+const prefs = Object.assign({ size: 18, legible: false, ts: true }, store.get("sb_prefs", {}));
+let file = null, fileDuration = 0, audioURL = null, rec = null;
+let xhr = null, job = null, cancelled = false, lastStart = null;
 
-function pick(f) {
-  if (!f) return;
-  file = f;
-  $("filename").textContent = `${f.name} · ${(f.size / 1048576).toFixed(1)} MB`;
-  $("filename").hidden = false;
-  refresh();
+/* ---------- helpers ---------- */
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const pad = n => String(n).padStart(2, "0");
+function clock(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60);
+  return h ? `${h}:${pad(m)}:${pad(s % 60)}` : `${pad(m)}:${pad(s % 60)}`;
 }
-const drop = $("drop");
-drop.addEventListener("click", () => $("file").click());
-drop.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("file").click(); } });
-$("file").addEventListener("change", e => pick(e.target.files[0]));
-["dragenter", "dragover"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add("over"); }));
-["dragleave", "drop"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove("over"); }));
-drop.addEventListener("drop", e => pick(e.dataTransfer.files[0]));
+const say = t => { $("#live").textContent = ""; setTimeout(() => $("#live").textContent = t, 30); };
+const wait = ms => new Promise(r => setTimeout(r, ms));
+function toast(t) {
+  const el = $("#toast"); el.textContent = t; el.hidden = false;
+  clearTimeout(toast.t); toast.t = setTimeout(() => el.hidden = true, 2800);
+}
+const fmtDate = iso => iso ? new Date(iso + "T12:00").toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" }) : "";
+const baseName = n => n.replace(/\.[^.]+$/, "");
+const isNetErr = e => e instanceof TypeError;
 
-function setStep(name) {
-  const order = ["upload", "process", "done"];
-  const i = order.indexOf(name);
-  document.querySelectorAll(".step").forEach(el => {
-    const j = order.indexOf(el.dataset.step);
-    el.classList.toggle("done", j < i || name === "done");
-    el.classList.toggle("active", j === i && name !== "done");
-  });
-}
-function setBar(pct) {
-  const bar = $("bar");
-  bar.classList.toggle("indeterminate", pct == null);
-  bar.firstElementChild.style.width = pct == null ? "" : pct + "%";
-}
-function showError(text) {
-  $("err").textContent = text; $("err").hidden = false;
-  setBar(0); $("go").disabled = false;
-}
-
-function upload(key) {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", API + "/upload");
-    xhr.setRequestHeader("Authorization", key);
-    xhr.upload.onprogress = e => {
-      if (!e.lengthComputable) return;
-      const p = Math.round(e.loaded / e.total * 100);
-      setBar(p);
-      $("msg").textContent = `Caricamento del file: ${p}%`;
-    };
-    xhr.onload = () => {
-      if (xhr.status === 401) return reject(new Error("La chiave API non è valida. Controlla di averla incollata per intero."));
-      if (xhr.status >= 300) return reject(new Error(`Il caricamento non è riuscito (errore ${xhr.status}).`));
-      resolve(JSON.parse(xhr.responseText).upload_url);
-    };
-    xhr.onerror = () => reject(new Error("Connessione interrotta durante il caricamento. Controlla internet e riprova."));
-    xhr.send(file);
-  });
-}
-
-async function api(path, key, opts = {}) {
-  const res = await fetch(API + path, {
-    ...opts,
-    headers: { Authorization: key, "Content-Type": "application/json", ...(opts.headers || {}) }
-  });
+class ApiError extends Error { constructor(msg, status) { super(msg); this.status = status; } }
+async function api(path, opts = {}) {
+  const res = await fetch(API + path, { ...opts, headers: { Authorization: apiKey, "Content-Type": "application/json" } });
   const data = await res.json().catch(() => ({}));
-  if (res.status === 401) throw new Error("La chiave API non è valida. Controlla di averla incollata per intero.");
-  if (!res.ok) throw new Error(data.error || `Errore del servizio (${res.status}).`);
+  if (res.status === 401) throw new ApiError("La chiave di accesso non è più valida. Apri Impostazioni e sblocca di nuovo.", 401);
+  if (!res.ok) throw new ApiError(data.error || `Il servizio ha risposto con un errore (${res.status}).`, res.status);
   return data;
 }
 
-const wait = ms => new Promise(r => setTimeout(r, ms));
-function clock(ms) {
-  const s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), sec = s % 60;
-  const pad = n => String(n).padStart(2, "0");
-  return h ? `${h}:${pad(m)}:${pad(sec)}` : `${pad(m)}:${pad(sec)}`;
+/* ---------- views ---------- */
+function show(view) {
+  for (const v of ["home", "work", "result"]) $("#" + v).hidden = v !== view;
+  $("#hero").hidden = view === "result";
+  $("#nav-new").hidden = view !== "result";
+  document.body.dataset.view = view;
+  if (view !== "work") document.title = "Sbobinatore";
+  if (view === "home") renderArchive();
+  window.scrollTo(0, 0);
 }
 
-$("go").addEventListener("click", async () => {
-  const key = $("apikey").value.trim();
-  $("go").disabled = true;
-  $("progress").hidden = false; $("result").hidden = true; $("err").hidden = true;
+/* ---------- access ---------- */
+async function decryptKey(pw) {
+  const b = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pw), "PBKDF2", false, ["deriveKey"]);
+  const k = await crypto.subtle.deriveKey({ name: "PBKDF2", salt: b(ENC.salt), iterations: ENC.iter, hash: "SHA-256" },
+    base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+  return new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: b(ENC.iv) }, k, b(ENC.ct)));
+}
+function refreshAccess() {
+  $("#unlock").hidden = !!apiKey;
+  $("#s-key-status").textContent = apiKey ? "Questo browser è sbloccato: non serve inserire di nuovo la password." : "Non sbloccato.";
+  $("#s-lock").hidden = !apiKey;
+  refreshGo();
+}
+$("#unlock-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const v = $("#pw").value.trim(), err = $("#unlock-err"), btn = $("#unlock-btn");
+  err.hidden = true; btn.disabled = true; btn.textContent = "Verifico…";
   try {
-    setStep("upload");
-    const audioUrl = await upload(key);
+    let key;
+    if (/^[0-9a-f]{32}$/i.test(v)) key = v;               // chiave AssemblyAI personale
+    else { try { key = await decryptKey(v); } catch { throw new Error("Password non corretta. Controlla maiuscole e trattini."); } }
+    const prev = apiKey; apiKey = key;
+    try { await api("/transcript?limit=1"); } catch (e2) { apiKey = prev; throw e2; }
+    store.set("sb_key", key); $("#pw").value = "";
+    refreshAccess(); toast("Sbloccato. Da ora non serve più la password su questo browser.");
+  } catch (e2) {
+    err.textContent = isNetErr(e2) ? "Nessuna connessione. Controlla internet e riprova." : e2.message; err.hidden = false;
+  } finally { btn.disabled = false; btn.textContent = "Sblocca"; }
+});
+$("#s-lock").addEventListener("click", () => { apiKey = ""; store.del("sb_key"); refreshAccess(); $("#settings").close(); toast("Browser bloccato."); });
 
-    setStep("process"); setBar(null);
-    $("msg").textContent = "Il file è arrivato. AssemblyAI sta trascrivendo la lezione…";
-    const lang = $("lang").value;
-    const body = { audio_url: audioUrl, punctuate: true, format_text: true, speaker_labels: $("speakers").checked };
-    if (lang === "auto") body.language_detection = true; else body.language_code = lang;
-    let t = await api("/transcript", key, { method: "POST", body: JSON.stringify(body) });
-
-    const started = Date.now();
-    while (t.status !== "completed") {
-      if (t.status === "error") throw new Error("La trascrizione non è riuscita: " + (t.error || "errore sconosciuto"));
-      await wait(4000);
-      t = await api("/transcript/" + t.id, key);
-      $("msg").textContent = `Trascrizione in corso… ${clock(Date.now() - started)} trascorsi`;
-    }
-
-    let blocks;
-    if ($("speakers").checked && t.utterances?.length) {
-      blocks = t.utterances.map(u => ({ start: u.start, speaker: u.speaker, text: u.text }));
-    } else {
-      const p = await api(`/transcript/${t.id}/paragraphs`, key);
-      blocks = p.paragraphs.map(x => ({ start: x.start, text: x.text }));
-    }
-
-    setStep("done"); setBar(100);
-    $("msg").textContent = "Fatto.";
-    render(blocks, t);
-  } catch (e) {
-    showError(e.message);
-  } finally {
-    $("go").disabled = false; refresh();
+/* ---------- file choice ---------- */
+const AUDIO_EXT = /\.(mp3|m4a|wav|aac|ogg|oga|opus|flac|wma|amr|aiff?|mp4|m4v|mov|webm|mkv|3gp|caf)$/i;
+function pick(f) {
+  const err = $("#file-err"); err.hidden = true;
+  if (!f) return;
+  if (!(/^(audio|video)\//.test(f.type) || AUDIO_EXT.test(f.name))) {
+    err.textContent = `“${f.name}” non sembra un file audio o video. Scegli un file MP3, M4A, WAV o MP4.`; err.hidden = false; return;
   }
+  if (f.size > 2.2e9) { err.textContent = "Il file supera i 2 GB. Esporta solo l'audio (per esempio in M4A) e riprova."; err.hidden = false; return; }
+  file = f; fileDuration = 0;
+  if (audioURL) URL.revokeObjectURL(audioURL);
+  audioURL = URL.createObjectURL(f);
+  $("#drop-empty").hidden = true; $("#drop-chosen").hidden = false;
+  $("#chosen-name").textContent = f.name;
+  const mb = f.size / 1048576;
+  const info = () => $("#chosen-info").textContent = [fileDuration ? clock(fileDuration * 1000) + " di audio" : "", mb.toFixed(mb < 10 ? 1 : 0) + " MB",
+    mb > 200 ? "file grande: meglio usare il Wi-Fi" : ""].filter(Boolean).join(" · ");
+  info();
+  const probe = document.createElement("audio"); probe.preload = "metadata";
+  probe.onloadedmetadata = () => { if (isFinite(probe.duration)) { fileDuration = probe.duration; info(); } };
+  probe.src = audioURL;
+  if (!$("#m-titolo").value) $("#m-titolo").placeholder = baseName(f.name);
+  refreshGo();
+}
+function refreshGo() {
+  $("#go").disabled = !(file && apiKey);
+  $("#go-hint").textContent = !apiKey ? "Prima inserisci la password qui sopra." : !file ? "Scegli un file per iniziare." : "Di solito bastano pochi minuti.";
+}
+$("#file").addEventListener("change", e => pick(e.target.files[0]));
+const drop = $("#drop");
+["dragenter", "dragover"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => pick(e.dataTransfer.files[0]));
+$("#m-data").value = new Date().toISOString().slice(0, 10);
+
+/* ---------- work view ---------- */
+function setStep(s) {
+  const order = ["upload", "transcribe", "index", "done"], i = order.indexOf(s);
+  $$("#steps li").forEach(li => {
+    const j = order.indexOf(li.dataset.s);
+    li.classList.toggle("done", j < i); li.classList.toggle("now", j === i);
+  });
+}
+function setProgress(p, label) {
+  p = Math.max(0, Math.min(100, p));
+  $("#pfill").style.strokeDashoffset = String(100 - p);
+  $("#pbar").setAttribute("aria-valuenow", String(Math.round(p)));
+  if (label !== undefined) $("#pct-label").textContent = label;
+}
+function workMeta(meta, fileName) {
+  const cells = [["Corso", meta.corso], ["Lezione", meta.titolo || baseName(fileName)], ["Data", fmtDate(meta.data)]].filter(c => c[1]);
+  $("#work-meta").innerHTML = cells.map(([l, v]) => `<div><span class="label">${l}</span><strong>${esc(v)}</strong></div>`).join("");
+}
+function workError(msg, canRetry) {
+  $("#work-err-text").innerHTML = "<b>Non è andata.</b> " + esc(msg);
+  $("#work-err").hidden = false; $("#retry").hidden = !canRetry; $("#cancel").hidden = true;
+  $("#alert").textContent = "Errore: " + msg;
+  document.title = "Errore · Sbobinatore";
+}
+const guard = e => { e.preventDefault(); e.returnValue = ""; };
+
+function readMeta() {
+  return { corso: $("#m-corso").value.trim(), titolo: $("#m-titolo").value.trim(), data: $("#m-data").value, prof: $("#m-prof").value.trim() };
+}
+function upload(f) {
+  return new Promise((resolve, reject) => {
+    xhr = new XMLHttpRequest();
+    xhr.open("POST", API + "/upload");
+    xhr.setRequestHeader("Authorization", apiKey);
+    let lastSaid = -1;
+    xhr.upload.onprogress = e => {
+      if (!e.lengthComputable) return;
+      const p = e.loaded / e.total * 100, r = Math.floor(p);
+      $("#pct-num").textContent = r + "%";
+      setProgress(p * 0.45, `Caricamento: ${(e.loaded / 1048576).toFixed(0)} di ${(e.total / 1048576).toFixed(0)} MB`);
+      document.title = `${r}% · Sbobinatore`;
+      if (r >= lastSaid + 25) { lastSaid = r - r % 25; say(`Caricamento al ${lastSaid}%`); }
+    };
+    xhr.onload = () => {
+      if (xhr.status === 401) return reject(new ApiError("La chiave di accesso non è valida. Apri Impostazioni e sblocca di nuovo.", 401));
+      if (xhr.status >= 300) return reject(new ApiError(`Il caricamento non è riuscito (errore ${xhr.status}).`, xhr.status));
+      resolve(JSON.parse(xhr.responseText).upload_url);
+    };
+    xhr.onerror = () => reject(new Error("La connessione si è interrotta durante il caricamento. Controlla internet e premi Riprova: il file resta selezionato."));
+    xhr.onabort = () => reject(new Error("annullato"));
+    xhr.send(f);
+  });
+}
+
+async function start() {
+  if (!file || !apiKey) return;
+  const meta = readMeta();
+  const opts = {
+    lang: $("#o-lang").value, speakers: $("#o-speakers").checked, index: $("#o-index").checked,
+    terms: $("#o-terms").value.split(/[,;\n]/).map(s => s.trim()).filter(Boolean).slice(0, 200)
+  };
+  lastStart = { meta, opts };
+  cancelled = false;
+  show("work"); workMeta(meta, file.name);
+  $("#work-err").hidden = true; $("#cancel").hidden = false;
+  $('#steps li[data-s="index"]').hidden = !opts.index;
+  setStep("upload"); setProgress(0, "Caricamento del file"); $("#pct-num").textContent = "0%";
+  $("#work-msg").textContent = "Tieni aperta questa scheda finché il caricamento non è finito.";
+  say("Caricamento iniziato");
+  addEventListener("beforeunload", guard);
+  let url;
+  try { url = await upload(file); }
+  catch (e) { removeEventListener("beforeunload", guard); if (!cancelled) workError(e.message, true); return; }
+  removeEventListener("beforeunload", guard);
+  if (cancelled) return;
+
+  const body = { audio_url: url, speech_models: ["universal-3-5-pro", "universal-2"], punctuate: true, format_text: true, speaker_labels: opts.speakers };
+  if (opts.lang === "auto") body.language_detection = true; else body.language_code = opts.lang;
+  const ctx = [meta.corso && `Lezione universitaria di ${meta.corso}`, meta.titolo && `argomento: ${meta.titolo}`, meta.prof && `docente: ${meta.prof}`].filter(Boolean).join(", ");
+  body.prompt = ctx || "Lezione universitaria registrata in aula.";
+  if (opts.terms.length) body.keyterms_prompt = opts.terms;
+  if (opts.index) body.speech_understanding = { request: { summarization: { summary_type: "bullets", effort: "low" } } };
+  try {
+    const t = await api("/transcript", { method: "POST", body: JSON.stringify(body) });
+    job = { id: t.id, meta, opts, fileName: file.name, startedAt: Date.now(), duration: fileDuration };
+    store.set("sb_pending", job);
+    await poll(job);
+  } catch (e) { if (!cancelled) workError(isNetErr(e) ? "Connessione assente. Controlla internet e riprova." : e.message, true); }
+}
+
+async function poll(j) {
+  setStep("transcribe");
+  $("#work-msg").textContent = "Il file è arrivato. Puoi cambiare scheda o chiudere questa pagina: quando la riapri, la sbobinatura riprende da qui.";
+  say("File caricato. Trascrizione in corso.");
+  const expected = Math.max(60, (j.duration || 3600) * 0.08) * 1000;   // stima prudente
+  let t, offline = false;
+  while (!cancelled) {
+    try { t = await api("/transcript/" + j.id); offline = false; }
+    catch (e) {
+      if (isNetErr(e)) { offline = true; $("#pct-label").textContent = "Connessione persa, riprovo…"; await wait(6000); continue; }
+      throw e;
+    }
+    if (t.status === "error") { store.del("sb_pending"); throw new Error("La trascrizione non è riuscita: " + (t.error || "errore sconosciuto") + ". Prova con un altro file."); }
+    if (t.status === "completed") break;
+    const el = Date.now() - j.startedAt;
+    const est = 45 + 50 * (1 - Math.exp(-el / expected));
+    setProgress(est, offline ? undefined : (t.status === "queued" ? "In coda" : "Trascrizione in corso"));
+    $("#pct-num").textContent = clock(el);
+    document.title = `In corso · ${clock(el)} · Sbobinatore`;
+    await wait(4000);
+  }
+  if (cancelled) return;
+  if (j.opts.index) { setStep("index"); setProgress(96, "Preparo l'indice"); }
+  const r = await buildRecord(t, j);
+  await idb.put(r).catch(() => {});
+  store.del("sb_pending");
+  setStep("done"); setProgress(100, "Pronta");
+  openRecord(r);
+  document.title = "Pronta · Sbobinatore";
+  setTimeout(() => { if (document.title.startsWith("Pronta")) document.title = "Sbobinatore"; }, 15000);
+  say("Sbobinatura pronta.");
+}
+
+async function buildRecord(t, j) {
+  const pr = await api(`/transcript/${t.id}/paragraphs`);
+  let paras = pr.paragraphs.map(p => ({
+    start: p.start, end: p.end, sp: p.words[0]?.speaker || null,
+    w: p.words.map(w => w.text),
+    u: p.words.reduce((a, w, i) => (w.confidence < UNSURE && a.push(i), a), [])
+  }));
+  if (j.opts.speakers) {
+    const count = {};
+    paras.forEach(p => { if (p.sp) count[p.sp] = (count[p.sp] || 0) + p.w.length; });
+    const main = Object.keys(count).sort((a, b) => count[b] - count[a])[0];
+    paras.forEach(p => { p.who = p.sp ? (p.sp === main ? "Docente" : "Intervento") : null; });
+  }
+  paras.forEach(p => delete p.sp);
+  const lang = t.language_code || j.opts.lang;
+  let chapters = (t.speech_understanding?.response?.summarization?.summary || [])
+    .map(s => ({ start: s.start, headline: s.headline || "", bullets: s.bullets || (s.text ? [s.text] : []) }));
+  if (chapters.length && LANG_NAMES[lang]) chapters = await translateChapters(chapters, LANG_NAMES[lang]);
+  return {
+    id: t.id, meta: j.meta, fileName: j.fileName, duration: t.audio_duration || 0, lang,
+    words: paras.reduce((n, p) => n + p.w.length, 0), paras, chapters, createdAt: Date.now()
+  };
+}
+
+async function translateChapters(chapters, langName) {
+  const items = chapters.map(c => ({ headline: c.headline, bullets: c.bullets }));
+  const prompt = `Traduci in ${langName} questo indice di una lezione universitaria. Rispondi SOLO con un array JSON valido, con la stessa struttura e lo stesso numero di elementi. Titoli brevi, con la maiuscola solo sulla prima parola e sui nomi propri. Usa la terminologia accademica corretta.\n\n${JSON.stringify(items)}`;
+  try {
+    const res = await fetch(GATEWAY, { method: "POST", headers: { Authorization: apiKey, "Content-Type": "application/json" },
+      body: JSON.stringify({ model: GATEWAY_MODEL, max_tokens: 6000, temperature: 0, messages: [{ role: "user", content: prompt }] }) });
+    if (!res.ok) return chapters;
+    const data = await res.json();
+    const txt = (data.choices?.[0]?.message?.content || "").replace(/^[^[]*/, "").replace(/[^\]]*$/, "");
+    const out = JSON.parse(txt);
+    if (!Array.isArray(out) || out.length !== chapters.length) return chapters;
+    return chapters.map((c, i) => ({ start: c.start, headline: String(out[i].headline || c.headline),
+      bullets: Array.isArray(out[i].bullets) ? out[i].bullets.map(String) : c.bullets }));
+  } catch { return chapters; }
+}
+
+$("#go").addEventListener("click", start);
+$("#retry").addEventListener("click", () => {
+  if (job && store.get("sb_pending")) { $("#work-err").hidden = true; $("#cancel").hidden = false; poll(job).catch(e => workError(e.message, true)); }
+  else start();
+});
+$("#back").addEventListener("click", () => { cancelled = true; show("home"); });
+$("#cancel").addEventListener("click", () => {
+  cancelled = true; if (xhr) xhr.abort();
+  removeEventListener("beforeunload", guard);
+  store.del("sb_pending"); job = null;
+  show("home"); toast("Annullato. Il file resta selezionato.");
 });
 
-function render(blocks, t) {
-  const showTs = $("timestamps").checked;
-  const box = $("transcript");
-  box.replaceChildren();
-  const lines = [];
-  for (const b of blocks) {
-    const p = document.createElement("p");
-    if (showTs) { const s = document.createElement("span"); s.className = "ts"; s.textContent = clock(b.start); p.append(s); }
-    if (b.speaker) { const s = document.createElement("span"); s.className = "spk"; s.textContent = "Voce " + b.speaker; p.append(s); }
-    p.append(document.createTextNode(b.text));
-    box.append(p);
-    lines.push(`${showTs ? "[" + clock(b.start) + "] " : ""}${b.speaker ? "Voce " + b.speaker + ": " : ""}${b.text}`);
-  }
-  const base = file.name.replace(/\.[^.]+$/, "");
-  const words = (t.text || "").split(/\s+/).filter(Boolean).length;
-  $("rtitle").textContent = base;
-  $("rmeta").textContent = `${clock((t.audio_duration || 0) * 1000)} di audio · ${words.toLocaleString("it-IT")} parole · ${blocks.length} paragrafi`;
-  lastExport = { base, text: lines.join("\n\n"), blocks: lines };
-  $("result").hidden = false;
-  $("result").scrollIntoView({ behavior: "smooth", block: "start" });
+/* ---------- result ---------- */
+function titleOf(r) { return r.meta.titolo || baseName(r.fileName); }
+function openRecord(r) {
+  rec = r;
+  show("result");
+  const cells = [["Corso", r.meta.corso], ["Docente", r.meta.prof], ["Data", fmtDate(r.meta.data)],
+    ["Durata", r.duration ? clock(r.duration * 1000) : ""], ["Parole", r.words.toLocaleString("it-IT")]].filter(c => c[1]);
+  $("#r-meta").innerHTML = cells.map(([l, v]) => `<div><span class="label">${l}</span><strong>${esc(v)}</strong></div>`).join("");
+  $("#r-title").textContent = titleOf(r);
+  $("#reading").lang = r.lang && r.lang.length === 2 ? r.lang : "it";
+
+  const hasCh = r.chapters.length > 1;
+  $("#rail").hidden = !hasCh;
+  $("#toc").innerHTML = hasCh ? r.chapters.map((c, i) =>
+    `<li><button type="button" data-ch="${i}"><span>${clock(c.start)}</span>${esc(c.headline)}</button></li>`).join("") : "";
+  $("#summary").hidden = !r.chapters.length;
+  $("#summary-body").innerHTML = r.chapters.map(c => `<h3>${esc(c.headline)}</h3><ul>${c.bullets.map(b => `<li>${esc(b)}</li>`).join("")}</ul>`).join("");
+  $("#summary").open = false;
+
+  $("#q").value = ""; $("#q-count").textContent = "";
+  renderTranscript("");
+  const unsure = r.paras.reduce((n, p) => n + p.u.length, 0);
+  $("#r-foot").textContent = unsure
+    ? `Le ${unsure} parole sottolineate a puntini sono quelle di cui il riconoscimento è meno sicuro: se ti servono, controllale ascoltando l'audio.`
+    : "Trascrizione automatica: ricontrolla nomi propri e termini tecnici prima di condividerla.";
+  setupPlayer();
+  applyPrefs();
+  $("#r-title").focus({ preventScroll: true });
 }
 
+function paraHTML(p, i, q) {
+  const text = p.w.join(" ");
+  let body;
+  if (q) {
+    const low = text.toLowerCase(); let k = 0, out = "", at;
+    while ((at = low.indexOf(q, k)) !== -1) { out += esc(text.slice(k, at)) + "<mark>" + esc(text.slice(at, at + q.length)) + "</mark>"; k = at + q.length; }
+    body = out + esc(text.slice(k));
+  } else {
+    const u = new Set(p.u);
+    body = p.w.map((w, j) => u.has(j) ? `<span class="unsure" title="Parola incerta: controllala sull'audio">${esc(w)}</span>` : esc(w)).join(" ");
+  }
+  const who = p.who && (i === 0 || rec.paras[i - 1].who !== p.who) ? `<span class="who">${p.who}</span>` : "";
+  return `<div class="para" data-i="${i}"><button class="ts" type="button" data-t="${p.start}" aria-label="Ascolta da ${clock(p.start)}">${clock(p.start)}</button><p>${who}${body}</p></div>`;
+}
+function renderTranscript(q) {
+  const chStarts = new Map();
+  if (rec.chapters.length > 1) rec.chapters.forEach((c, ci) => {
+    const idx = rec.paras.findIndex(p => p.end > c.start);
+    if (idx >= 0 && !chStarts.has(idx)) chStarts.set(idx, ci);
+  });
+  let html = "";
+  rec.paras.forEach((p, i) => {
+    if (chStarts.has(i)) { const ci = chStarts.get(i); html += `<h2 id="ch-${ci}">${esc(rec.chapters[ci].headline)}</h2>`; }
+    html += paraHTML(p, i, q);
+  });
+  $("#transcript").innerHTML = html;
+  curPara = -1;
+}
+
+/* search */
+let hits = [], hitAt = -1, qTimer;
+$("#q").addEventListener("input", () => {
+  clearTimeout(qTimer);
+  qTimer = setTimeout(() => {
+    const q = $("#q").value.trim().toLowerCase();
+    renderTranscript(q.length >= 2 ? q : "");
+    hits = q.length >= 2 ? $$("#transcript mark") : [];
+    hitAt = -1;
+    $("#q-count").textContent = q.length < 2 ? "" : hits.length ? `${hits.length} risultati` : "Nessun risultato";
+    if (hits.length) goHit(0);
+  }, 180);
+});
+function goHit(i) {
+  if (!hits.length) return;
+  hits[hitAt]?.classList.remove("here");
+  hitAt = (i + hits.length) % hits.length;
+  hits[hitAt].classList.add("here");
+  hits[hitAt].scrollIntoView({ block: "center", behavior: reduceMotion ? "auto" : "smooth" });
+  $("#q-count").textContent = `${hitAt + 1} di ${hits.length}`;
+}
+$("#q").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); goHit(hitAt + (e.shiftKey ? -1 : 1)); } });
+$("#q-next").addEventListener("click", () => goHit(hitAt + 1));
+$("#q-prev").addEventListener("click", () => goHit(hitAt - 1));
+
+/* chapters */
+$("#toc").addEventListener("click", e => {
+  const b = e.target.closest("button[data-ch]"); if (!b) return;
+  const ci = +b.dataset.ch, h = $("#ch-" + ci);
+  if (h) h.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth" });
+  const a = $("#audio"); if (!a.hidden) a.currentTime = rec.chapters[ci].start / 1000;
+});
+
+/* audio */
+let curPara = -1;
+function setupPlayer() {
+  const a = $("#audio"), have = !!(audioURL && file && rec && file.name === rec.fileName);
+  a.hidden = !have; $("#follow-wrap").hidden = !have; $("#relink-wrap").hidden = have;
+  if (have) { if (a.src !== audioURL) a.src = audioURL; } else { a.removeAttribute("src"); a.load(); }
+}
+$("#relink").addEventListener("change", e => {
+  const f = e.target.files[0]; if (!f) return;
+  file = f; if (audioURL) URL.revokeObjectURL(audioURL); audioURL = URL.createObjectURL(f);
+  if (rec) { rec.fileName = f.name; idb.put(rec).catch(() => {}); }
+  setupPlayer(); toast("Audio collegato. Clicca un minuto per ascoltare da lì.");
+});
+$("#transcript").addEventListener("click", e => {
+  const b = e.target.closest(".ts"); if (!b) return;
+  const a = $("#audio");
+  if (a.hidden) { toast("Per ascoltare, ricollega l'audio con il pulsante in basso."); return; }
+  a.currentTime = +b.dataset.t / 1000; a.play().catch(() => {});
+});
+$("#audio").addEventListener("timeupdate", () => {
+  const ms = $("#audio").currentTime * 1000, ps = rec.paras;
+  let lo = 0, hi = ps.length - 1, idx = -1;
+  while (lo <= hi) { const m = (lo + hi) >> 1; if (ps[m].start <= ms) { idx = m; lo = m + 1; } else hi = m - 1; }
+  if (idx === curPara) return;
+  $(`.para[data-i="${curPara}"]`)?.classList.remove("current");
+  curPara = idx;
+  const el = $(`.para[data-i="${idx}"]`); if (!el) return;
+  el.classList.add("current");
+  if ($("#follow").checked && !$("#audio").paused) el.scrollIntoView({ block: "center", behavior: reduceMotion ? "auto" : "smooth" });
+  $$("#toc button").forEach((b, i) => b.classList.toggle("on", i === rec.chapters.reduce((k, c, ci) => c.start <= ms ? ci : k, 0)));
+});
+
+/* exports */
+function exportName(ext) {
+  const parts = [rec.meta.corso, titleOf(rec), rec.meta.data].filter(Boolean).join("_");
+  return parts.replace(/[\\/:*?"<>|]+/g, "").replace(/\s+/g, " ").trim().slice(0, 120) + "." + ext;
+}
+function blocks() {
+  const out = []; const chAt = new Map();
+  if (rec.chapters.length > 1) rec.chapters.forEach(c => { const i = rec.paras.findIndex(p => p.end > c.start); if (i >= 0 && !chAt.has(i)) chAt.set(i, c.headline); });
+  rec.paras.forEach((p, i) => {
+    if (chAt.has(i)) out.push({ h: chAt.get(i) });
+    out.push({ t: p.start, who: p.who && (i === 0 || rec.paras[i - 1].who !== p.who) ? p.who : "", text: p.w.join(" ") });
+  });
+  return out;
+}
+const metaLines = () => [["Corso", rec.meta.corso], ["Docente", rec.meta.prof], ["Data", fmtDate(rec.meta.data)],
+  ["Durata", rec.duration ? clock(rec.duration * 1000) : ""]].filter(c => c[1]);
+function asText(md) {
+  const ts = prefs.ts; let s = md ? `# ${titleOf(rec)}\n\n` : `${titleOf(rec).toUpperCase()}\n\n`;
+  s += metaLines().map(([l, v]) => md ? `**${l}:** ${v}  ` : `${l}: ${v}`).join("\n") + "\n\n";
+  for (const b of blocks()) {
+    if (b.h) { s += md ? `## ${b.h}\n\n` : `\n${b.h.toUpperCase()}\n\n`; continue; }
+    s += (ts ? `[${clock(b.t)}] ` : "") + (b.who ? (md ? `**${b.who}:** ` : `${b.who}: `) : "") + b.text + "\n\n";
+  }
+  return s.trim() + "\n";
+}
+function asDoc() {
+  const ts = prefs.ts;
+  let h = `<html><head><meta charset="utf-8"><title>${esc(titleOf(rec))}</title><style>body{font-family:Calibri,Arial,sans-serif;font-size:12pt;line-height:1.5}h1{font-family:Georgia,serif;font-weight:normal;font-size:24pt}h2{font-family:Georgia,serif;font-weight:normal;font-size:16pt;margin-top:18pt}.m{color:#555}.t{color:#777;font-size:10pt}</style></head><body>`;
+  h += `<h1>${esc(titleOf(rec))}</h1>` + metaLines().map(([l, v]) => `<p class="m">${l}: ${esc(v)}</p>`).join("");
+  for (const b of blocks()) {
+    if (b.h) { h += `<h2>${esc(b.h)}</h2>`; continue; }
+    h += `<p>${ts ? `<span class="t">[${clock(b.t)}]</span> ` : ""}${b.who ? `<b>${b.who}:</b> ` : ""}${esc(b.text)}</p>`;
+  }
+  return "﻿" + h + "</body></html>";
+}
 function save(name, content, type) {
   const url = URL.createObjectURL(new Blob([content], { type }));
-  const a = document.createElement("a");
-  a.href = url; a.download = name; document.body.append(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  const a = document.createElement("a"); a.href = url; a.download = name; document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
 }
-$("copy").addEventListener("click", async () => {
-  if (!lastExport) return;
-  try { await navigator.clipboard.writeText(lastExport.text); $("copy").textContent = "Copiato"; }
-  catch { const r = document.createRange(); r.selectNodeContents($("transcript")); getSelection().removeAllRanges(); getSelection().addRange(r); $("copy").textContent = "Testo selezionato: premi Cmd+C"; }
-  setTimeout(() => $("copy").textContent = "Copia testo", 2500);
+$$("[data-dl]").forEach(b => b.addEventListener("click", () => {
+  $("#dl-menu").open = false;
+  const k = b.dataset.dl;
+  if (k === "doc") save(exportName("doc"), asDoc(), "application/msword");
+  if (k === "md") save(exportName("md"), asText(true), "text/markdown;charset=utf-8");
+  if (k === "txt") save(exportName("txt"), asText(false), "text/plain;charset=utf-8");
+  if (k === "pdf") { $("#q").value && ($("#q").value = "", renderTranscript("")); setTimeout(() => window.print(), 50); }
+}));
+document.addEventListener("click", e => { const m = $("#dl-menu"); if (m.open && !m.contains(e.target)) m.open = false; });
+$("#copy").addEventListener("click", async () => {
+  const b = $("#copy");
+  try { await navigator.clipboard.writeText(asText(false)); b.textContent = "Copiato"; }
+  catch { const r = document.createRange(); r.selectNodeContents($("#transcript")); getSelection().removeAllRanges(); getSelection().addRange(r); b.textContent = "Selezionato: premi Cmd+C"; }
+  setTimeout(() => b.textContent = "Copia testo", 2200);
 });
-$("dltxt").addEventListener("click", () => lastExport && save(lastExport.base + ".txt", lastExport.text, "text/plain;charset=utf-8"));
-$("dldoc").addEventListener("click", () => {
-  if (!lastExport) return;
-  const esc = s => s.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
-  const html = `<html><head><meta charset="utf-8"><title>${esc(lastExport.base)}</title></head><body style="font-family:Georgia,serif;font-size:12pt;line-height:1.5"><h1>${esc(lastExport.base)}</h1>${lastExport.blocks.map(l => "<p>" + esc(l) + "</p>").join("")}</body></html>`;
-  save(lastExport.base + ".doc", "﻿" + html, "application/msword");
+
+/* ---------- archive ---------- */
+async function renderArchive() {
+  let all = [];
+  try { all = (await idb.all()).sort((a, b) => b.createdAt - a.createdAt); } catch {}
+  $("#archive").hidden = !all.length;
+  $("#archive-list").innerHTML = all.slice(0, 20).map(r => `<li>
+    <button class="open" type="button" data-open="${esc(r.id)}"><strong>${esc(titleOf(r))}</strong>
+      <span class="note">${esc([r.meta.corso, fmtDate(r.meta.data), r.duration ? clock(r.duration * 1000) : ""].filter(Boolean).join(" · "))}</span></button>
+    <button class="icon-btn" type="button" data-del="${esc(r.id)}" aria-label="Elimina ${esc(titleOf(r))}"><svg viewBox="0 0 16 16"><path d="M3 3l10 10M13 3L3 13"/></svg></button>
+  </li>`).join("");
+}
+$("#archive-list").addEventListener("click", async e => {
+  const o = e.target.closest("[data-open]"), d = e.target.closest("[data-del]");
+  if (o) { const r = await idb.get(o.dataset.open); if (r) openRecord(r); }
+  if (d) {
+    if (d.dataset.confirm !== "1") { d.dataset.confirm = "1"; d.setAttribute("aria-label", "Conferma eliminazione"); d.style.color = "var(--coral-ink)"; toast("Premi di nuovo la × per eliminarla."); return; }
+    await idb.del(d.dataset.del); renderArchive(); toast("Eliminata.");
+  }
 });
-refresh();
+
+/* ---------- settings ---------- */
+function applyPrefs() {
+  document.documentElement.style.setProperty("--fs-read", prefs.size + "px");
+  document.body.classList.toggle("legible", prefs.legible);
+  $("#transcript").classList.toggle("no-ts", !prefs.ts);
+  $("#reading").classList.toggle("no-ts", !prefs.ts);
+  $$("#sizes button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.size === prefs.size)));
+  $("#s-legible").checked = prefs.legible; $("#s-ts").checked = prefs.ts;
+  store.set("sb_prefs", prefs);
+}
+$("#sizes").addEventListener("click", e => { const b = e.target.closest("button"); if (b) { prefs.size = +b.dataset.size; applyPrefs(); } });
+$("#s-legible").addEventListener("change", e => { prefs.legible = e.target.checked; applyPrefs(); });
+$("#s-ts").addEventListener("change", e => { prefs.ts = e.target.checked; applyPrefs(); });
+$("#nav-settings").addEventListener("click", () => { refreshAccess(); $("#settings").showModal(); });
+$("#nav-new").addEventListener("click", () => show("home"));
+$("#brand").addEventListener("click", () => { if (document.body.dataset.view !== "work") show("home"); });
+
+/* ---------- boot ---------- */
+applyPrefs();
+refreshAccess();
+show("home");
+const pending = store.get("sb_pending");
+if (pending && apiKey) {
+  job = pending; cancelled = false;
+  show("work"); workMeta(pending.meta, pending.fileName);
+  $('#steps li[data-s="index"]').hidden = !pending.opts.index;
+  $("#pct-num").textContent = "…";
+  poll(pending).catch(e => workError(isNetErr(e) ? "Connessione assente. Controlla internet e riprova." : e.message, true));
+}
 </script>
 </body>
 </html>
