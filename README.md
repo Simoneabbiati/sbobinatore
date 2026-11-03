@@ -1,6 +1,6 @@
 # Sbobinatore
 
-Carica la registrazione di una lezione e ricevi la sbobinatura: paragrafi con il minutaggio, indice per argomenti, riassunto, ricerca nel testo, ascolto sincronizzato con l'audio ed export in Word, PDF, Markdown e testo.
+Carica la registrazione di una lezione e ricevi la sbobinatura: paragrafi con il minutaggio, indice per argomenti, riassunto per sezioni, ricerca nel testo, ascolto sincronizzato con l'audio ed export in Word, PDF, Markdown e testo.
 
 Online: https://simoneabbiati.github.io/sbobinatore/
 
@@ -9,7 +9,8 @@ Online: https://simoneabbiati.github.io/sbobinatore/
 Un solo file, `index.html`, che gira interamente nel browser:
 
 - l'audio va direttamente ad [AssemblyAI](https://www.assemblyai.com) (modelli Universal-3.5 Pro, con Universal-2 di riserva);
-- l'indice per argomenti viene dalla Summarization di AssemblyAI e, se la lezione non è in inglese, è tradotto con l'LLM Gateway di AssemblyAI;
+- l'indice per argomenti viene dalla Summarization di AssemblyAI e, se la lezione non è in inglese, i titoli sono tradotti con lo stesso modello;
+- il riassunto per sezioni è scritto da Qwen (modello open source, Apache 2.0) tramite l'LLM Gateway di AssemblyAI, una sezione per argomento; costa una frazione di centesimo a lezione;
 - le sbobinature restano salvate nel browser (IndexedDB); una trascrizione in corso riprende anche se la pagina viene chiusa.
 
 ## Accesso
