@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sbobinatore</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap">
+<style>
+:root {
+  --bg: #F3F5F8;
+  --surface: #FFFFFF;
+  --ink: #18202E;
+  --muted: #5B6578;
+  --line: #D9DEE7;
+  --accent: #2B4BB3;
+  --accent-ink: #FFFFFF;
+  --mark: #F4E36B;
+  --ok: #1E7A4C;
+  --err: #B3261E;
+  --err-bg: #FBEAE8;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #11151D; --surface: #1A2030; --ink: #E7EAF1; --muted: #9AA3B5;
+    --line: #2C3446; --accent: #8FA6F2; --accent-ink: #0F1424; --mark: #6B5F1A;
+    --ok: #6BCB97; --err: #F2928B; --err-bg: #3A1F1E;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 15px/1.5 "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding: 32px 16px 64px;
+}
+.wrap { max-width: 760px; margin: 0 auto; display: grid; gap: 24px; }
+header h1 {
+  font: 600 34px/1.1 "Newsreader", Georgia, serif; margin: 0 0 6px; letter-spacing: -0.01em;
+}
+header h1 span { background: linear-gradient(transparent 58%, var(--mark) 58%); padding: 0 2px; }
+header p { margin: 0; color: var(--muted); max-width: 60ch; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; display: grid; gap: 16px; }
+.label { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.field { display: grid; gap: 6px; }
+.row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
+.row > .field { flex: 1 1 200px; }
+input[type=password], input[type=text], select {
+  font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line);
+  border-radius: 6px; padding: 9px 11px; width: 100%;
+}
+input:focus-visible, select:focus-visible, button:focus-visible, .drop:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+.hint { font-size: 13px; color: var(--muted); }
+.hint a { color: var(--accent); }
+.check { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+
+.drop {
+  border: 2px dashed var(--line); border-radius: 10px; padding: 28px 16px; text-align: center;
+  cursor: pointer; transition: border-color .15s, background .15s;
+}
+.drop:hover, .drop.over { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.drop strong { display: block; font-size: 16px; margin-bottom: 4px; }
+.drop .file { margin-top: 10px; font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 13px; color: var(--ink); word-break: break-all; }
+
+button {
+  font: 600 15px/1 "Instrument Sans", system-ui, sans-serif; border-radius: 6px; padding: 11px 18px;
+  border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); cursor: pointer;
+}
+button.ghost { background: transparent; color: var(--accent); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+
+.status { display: grid; gap: 8px; }
+.steps { display: flex; gap: 8px; flex-wrap: wrap; font-size: 13px; }
+.step { padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+.step.active { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.step.done { border-color: var(--ok); color: var(--ok); }
+.bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.bar > div { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+.bar.indeterminate > div { width: 30%; animation: slide 1.4s ease-in-out infinite; }
+@keyframes slide { from { margin-left: -30%; } to { margin-left: 100%; } }
+@media (prefers-reduced-motion: reduce) { .bar.indeterminate > div { animation: none; width: 100%; opacity: .5; } }
+.msg { font-size: 14px; color: var(--muted); }
+.error { background: var(--err-bg); color: var(--err); border-radius: 6px; padding: 10px 12px; font-size: 14px; }
+
+.result-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center; }
+.result-head h2 { font: 600 22px/1.2 "Newsreader", Georgia, serif; margin: 0; }
+.meta { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.actions button { padding: 8px 12px; font-size: 14px; }
+.transcript { font: 18px/1.65 "Newsreader", Georgia, serif; max-width: 68ch; }
+.transcript p { margin: 0 0 1em; }
+.ts { font: 12px/1 "JetBrains Mono", ui-monospace, monospace; color: var(--muted); margin-right: 8px; user-select: none; }
+.spk { font: 600 13px/1 "Instrument Sans", sans-serif; color: var(--accent); margin-right: 6px; text-transform: uppercase; letter-spacing: .04em; }
+footer { font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1><span>Sbobinatore</span></h1>
+    <p>Carica la registrazione di una lezione e ricevi la sbobinatura in testo, divisa in paragrafi. La trascrizione la fa AssemblyAI.</p>
+  </header>
+
+  <section class="panel" id="setup">
+    <div class="field">
+      <label class="label" for="apikey">Chiave API di AssemblyAI</label>
+      <input type="password" id="apikey" autocomplete="off" placeholder="Incolla qui la chiave">
+      <span class="hint">Resta salvata solo in questo browser. La trovi su <a href="https://www.assemblyai.com/dashboard/api-keys" target="_blank" rel="noopener">assemblyai.com/dashboard</a>.</span>
+    </div>
+
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Scegli il file audio">
+      <strong>Trascina qui il file della lezione</strong>
+      <span class="hint">oppure clicca per sceglierlo. MP3, M4A, WAV, MP4, OGG…</span>
+      <div class="file" id="filename" hidden></div>
+      <input type="file" id="file" accept="audio/*,video/*" hidden>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label class="label" for="lang">Lingua della lezione</label>
+        <select id="lang">
+          <option value="it" selected>Italiano</option>
+          <option value="en">Inglese</option>
+          <option value="fr">Francese</option>
+          <option value="es">Spagnolo</option>
+          <option value="de">Tedesco</option>
+          <option value="auto">Riconosci da sola</option>
+        </select>
+      </div>
+      <div class="field" style="flex:2 1 260px">
+        <span class="label">Opzioni</span>
+        <label class="check"><input type="checkbox" id="speakers"> Distingui chi parla (professore, domande)</label>
+        <label class="check"><input type="checkbox" id="timestamps" checked> Mostra il minuto di ogni paragrafo</label>
+      </div>
+    </div>
+
+    <div><button id="go" disabled>Sbobina</button></div>
+  </section>
+
+  <section class="panel" id="progress" hidden>
+    <div class="steps">
+      <span class="step" data-step="upload">1 · Caricamento</span>
+      <span class="step" data-step="process">2 · Trascrizione</span>
+      <span class="step" data-step="done">3 · Pronta</span>
+    </div>
+    <div class="bar" id="bar"><div></div></div>
+    <div class="msg" id="msg"></div>
+    <div class="error" id="err" hidden></div>
+  </section>
+
+  <section class="panel" id="result" hidden>
+    <div class="result-head">
+      <div>
+        <h2 id="rtitle">Sbobinatura</h2>
+        <div class="meta" id="rmeta"></div>
+      </div>
+      <div class="actions">
+        <button class="ghost" id="copy">Copia testo</button>
+        <button class="ghost" id="dltxt">Scarica .txt</button>
+        <button class="ghost" id="dldoc">Scarica per Word</button>
+      </div>
+    </div>
+    <div class="transcript" id="transcript"></div>
+  </section>
+
+  <footer>Per una lezione di un'ora servono di solito pochi minuti. Puoi lasciare la pagina aperta e fare altro.</footer>
+</div>
+
+<script>
+const API = "https://api.assemblyai.com/v2";
+const $ = id => document.getElementById(id);
+let file = null, lastExport = null;
+
+const store = {
+  get(k) { try { return localStorage.getItem(k) || ""; } catch { return ""; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch {} }
+};
+const DEFAULT_KEY = "";
+$("apikey").value = store.get("aai_key") || DEFAULT_KEY;
+$("apikey").addEventListener("input", e => { store.set("aai_key", e.target.value.trim()); refresh(); });
+
+function refresh() { $("go").disabled = !(file && $("apikey").value.trim()); }
+
+function pick(f) {
+  if (!f) return;
+  file = f;
+  $("filename").textContent = `${f.name} · ${(f.size / 1048576).toFixed(1)} MB`;
+  $("filename").hidden = false;
+  refresh();
+}
+const drop = $("drop");
+drop.addEventListener("click", () => $("file").click());
+drop.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("file").click(); } });
+$("file").addEventListener("change", e => pick(e.target.files[0]));
+["dragenter", "dragover"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => pick(e.dataTransfer.files[0]));
+
+function setStep(name) {
+  const order = ["upload", "process", "done"];
+  const i = order.indexOf(name);
+  document.querySelectorAll(".step").forEach(el => {
+    const j = order.indexOf(el.dataset.step);
+    el.classList.toggle("done", j < i || name === "done");
+    el.classList.toggle("active", j === i && name !== "done");
+  });
+}
+function setBar(pct) {
+  const bar = $("bar");
+  bar.classList.toggle("indeterminate", pct == null);
+  bar.firstElementChild.style.width = pct == null ? "" : pct + "%";
+}
+function showError(text) {
+  $("err").textContent = text; $("err").hidden = false;
+  setBar(0); $("go").disabled = false;
+}
+
+function upload(key) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", API + "/upload");
+    xhr.setRequestHeader("Authorization", key);
+    xhr.upload.onprogress = e => {
+      if (!e.lengthComputable) return;
+      const p = Math.round(e.loaded / e.total * 100);
+      setBar(p);
+      $("msg").textContent = `Caricamento del file: ${p}%`;
+    };
+    xhr.onload = () => {
+      if (xhr.status === 401) return reject(new Error("La chiave API non è valida. Controlla di averla incollata per intero."));
+      if (xhr.status >= 300) return reject(new Error(`Il caricamento non è riuscito (errore ${xhr.status}).`));
+      resolve(JSON.parse(xhr.responseText).upload_url);
+    };
+    xhr.onerror = () => reject(new Error("Connessione interrotta durante il caricamento. Controlla internet e riprova."));
+    xhr.send(file);
+  });
+}
+
+async function api(path, key, opts = {}) {
+  const res = await fetch(API + path, {
+    ...opts,
+    headers: { Authorization: key, "Content-Type": "application/json", ...(opts.headers || {}) }
+  });
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 401) throw new Error("La chiave API non è valida. Controlla di averla incollata per intero.");
+  if (!res.ok) throw new Error(data.error || `Errore del servizio (${res.status}).`);
+  return data;
+}
+
+const wait = ms => new Promise(r => setTimeout(r, ms));
+function clock(ms) {
+  const s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), sec = s % 60;
+  const pad = n => String(n).padStart(2, "0");
+  return h ? `${h}:${pad(m)}:${pad(sec)}` : `${pad(m)}:${pad(sec)}`;
+}
+
+$("go").addEventListener("click", async () => {
+  const key = $("apikey").value.trim();
+  $("go").disabled = true;
+  $("progress").hidden = false; $("result").hidden = true; $("err").hidden = true;
+  try {
+    setStep("upload");
+    const audioUrl = await upload(key);
+
+    setStep("process"); setBar(null);
+    $("msg").textContent = "Il file è arrivato. AssemblyAI sta trascrivendo la lezione…";
+    const lang = $("lang").value;
+    const body = { audio_url: audioUrl, punctuate: true, format_text: true, speaker_labels: $("speakers").checked };
+    if (lang === "auto") body.language_detection = true; else body.language_code = lang;
+    let t = await api("/transcript", key, { method: "POST", body: JSON.stringify(body) });
+
+    const started = Date.now();
+    while (t.status !== "completed") {
+      if (t.status === "error") throw new Error("La trascrizione non è riuscita: " + (t.error || "errore sconosciuto"));
+      await wait(4000);
+      t = await api("/transcript/" + t.id, key);
+      $("msg").textContent = `Trascrizione in corso… ${clock(Date.now() - started)} trascorsi`;
+    }
+
+    let blocks;
+    if ($("speakers").checked && t.utterances?.length) {
+      blocks = t.utterances.map(u => ({ start: u.start, speaker: u.speaker, text: u.text }));
+    } else {
+      const p = await api(`/transcript/${t.id}/paragraphs`, key);
+      blocks = p.paragraphs.map(x => ({ start: x.start, text: x.text }));
+    }
+
+    setStep("done"); setBar(100);
+    $("msg").textContent = "Fatto.";
+    render(blocks, t);
+  } catch (e) {
+    showError(e.message);
+  } finally {
+    $("go").disabled = false; refresh();
+  }
+});
+
+function render(blocks, t) {
+  const showTs = $("timestamps").checked;
+  const box = $("transcript");
+  box.replaceChildren();
+  const lines = [];
+  for (const b of blocks) {
+    const p = document.createElement("p");
+    if (showTs) { const s = document.createElement("span"); s.className = "ts"; s.textContent = clock(b.start); p.append(s); }
+    if (b.speaker) { const s = document.createElement("span"); s.className = "spk"; s.textContent = "Voce " + b.speaker; p.append(s); }
+    p.append(document.createTextNode(b.text));
+    box.append(p);
+    lines.push(`${showTs ? "[" + clock(b.start) + "] " : ""}${b.speaker ? "Voce " + b.speaker + ": " : ""}${b.text}`);
+  }
+  const base = file.name.replace(/\.[^.]+$/, "");
+  const words = (t.text || "").split(/\s+/).filter(Boolean).length;
+  $("rtitle").textContent = base;
+  $("rmeta").textContent = `${clock((t.audio_duration || 0) * 1000)} di audio · ${words.toLocaleString("it-IT")} parole · ${blocks.length} paragrafi`;
+  lastExport = { base, text: lines.join("\n\n"), blocks: lines };
+  $("result").hidden = false;
+  $("result").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function save(name, content, type) {
+  const url = URL.createObjectURL(new Blob([content], { type }));
+  const a = document.createElement("a");
+  a.href = url; a.download = name; document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+$("copy").addEventListener("click", async () => {
+  if (!lastExport) return;
+  try { await navigator.clipboard.writeText(lastExport.text); $("copy").textContent = "Copiato"; }
+  catch { const r = document.createRange(); r.selectNodeContents($("transcript")); getSelection().removeAllRanges(); getSelection().addRange(r); $("copy").textContent = "Testo selezionato: premi Cmd+C"; }
+  setTimeout(() => $("copy").textContent = "Copia testo", 2500);
+});
+$("dltxt").addEventListener("click", () => lastExport && save(lastExport.base + ".txt", lastExport.text, "text/plain;charset=utf-8"));
+$("dldoc").addEventListener("click", () => {
+  if (!lastExport) return;
+  const esc = s => s.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+  const html = `<html><head><meta charset="utf-8"><title>${esc(lastExport.base)}</title></head><body style="font-family:Georgia,serif;font-size:12pt;line-height:1.5"><h1>${esc(lastExport.base)}</h1>${lastExport.blocks.map(l => "<p>" + esc(l) + "</p>").join("")}</body></html>`;
+  save(lastExport.base + ".doc", "﻿" + html, "application/msword");
+});
+refresh();
+</script>
+</body>
+</html>
